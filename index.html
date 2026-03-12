@@ -9,12 +9,12 @@
         .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
         .form-group { margin-bottom: 15px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 14px; }
         input[type="text"], input[type="number"], input[type="date"], textarea { 
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; 
         }
         .flex-row { display: flex; gap: 15px; flex-wrap: wrap; }
-        .flex-row .form-group { flex: 1; min-width: 200px;}
+        .flex-row .form-group { flex: 1; min-width: 150px;}
         
         button { background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #2980b9; }
@@ -33,12 +33,17 @@
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;}
         table, th, td { border: 1px solid #ddd; }
-        th, td { padding: 8px; text-align: center; }
+        th, td { padding: 4px; text-align: center; } /* Giảm padding để ô gọn hơn */
         th { background-color: #f2f2f2; }
-        input.cell-input { width: 100%; padding: 5px; box-sizing: border-box; text-align: center; border: 1px solid #ccc; border-radius: 3px;}
+        /* Cập nhật style cho ô nhập liệu trong bảng */
+        input.cell-input { width: 100%; padding: 8px 5px; box-sizing: border-box; text-align: center; border: 1px solid #ccc; border-radius: 3px; font-size: 15px;}
+        /* Ô Tên vèo khác màu chút cho dễ phân biệt */
+        input.name-input { background-color: #f9f9f9; font-weight: bold; color: #333;}
         
         .result-area { margin-top: 30px; padding-top: 20px; border-top: 2px dashed #ccc; }
         #messageOutput { height: 350px; background-color: #f9f9f9; resize: vertical; }
+        .highlight-box { background-color: #fff3cd; padding: 15px; border-radius: 4px; border-left: 4px solid #ffc107; margin-bottom: 15px;}
+        .note-text { font-weight: normal; font-size: 12px; color: #555; font-style: italic; }
     </style>
 </head>
 <body>
@@ -73,8 +78,7 @@
     <table id="veoTable" style="display: none;">
         <thead>
             <tr>
-                <th>Vèo Số</th>
-                <th>Size cá (g)</th>
+                <th>Tên Vèo</th> <th>Size cá (g)</th>
                 <th>Thức ăn (kg)</th>
                 <th>Cá chết (con)</th>
             </tr>
@@ -84,19 +88,30 @@
     </table>
 
     <div id="extraInfoArea" style="display: none;">
-        <div class="form-group">
-            <label>So sánh Thức ăn so với hôm qua (Dùng cho báo cáo cuối ngày):</label>
-            <input type="text" id="compareTA" placeholder="VD: tăng 4kg so với hôm qua">
-        </div>
         
-        <div class="flex-row">
-            <div class="form-group">
-                <label>Tổng khối lượng cá chết (kg) - Cho phép nhập phẩy (VD: 2,5):</label>
-                <input type="text" id="totalCCKg" placeholder="VD: 3,7">
+        <div class="highlight-box">
+            <label style="color: #856404; font-size: 15px; margin-bottom: 10px;">THÔNG TIN ĐỂ TỰ ĐỘNG SO SÁNH TĂNG/GIẢM:</label>
+            
+            <div class="flex-row">
+                <div class="form-group">
+                    <label>1. Tổng Thức ăn HÔM QUA (kg):</label>
+                    <input type="text" id="compareTA" placeholder="VD: 4 hoặc 4,5">
+                </div>
+                <div class="form-group">
+                    <label>2. Tổng cá chết HÔM NAY (kg):</label>
+                    <input type="text" id="todayCCKg" placeholder="VD: 97,4">
+                </div>
             </div>
-            <div class="form-group">
-                <label>So sánh Cá chết so với hôm qua:</label>
-                <input type="text" id="compareCC" placeholder="VD: tăng 81 con (sáng) hoặc tăng 45c/0,8kg (chiều)">
+            
+            <div class="flex-row">
+                <div class="form-group">
+                    <label>3. Tổng cá chết HÔM QUA (con):</label>
+                    <input type="number" id="yesterdayCCCon" placeholder="VD: 1747">
+                </div>
+                <div class="form-group">
+                    <label>4. Tổng cá chết HÔM QUA (kg):</label>
+                    <input type="text" id="yesterdayCCKg" placeholder="VD: 43,8">
+                </div>
             </div>
         </div>
 
@@ -126,18 +141,21 @@
             reportDate: document.getElementById('reportDate').value,
             numVeo: document.getElementById('numVeo').value,
             compareTA: document.getElementById('compareTA').value,
-            totalCCKg: document.getElementById('totalCCKg').value,
-            compareCC: document.getElementById('compareCC').value,
+            todayCCKg: document.getElementById('todayCCKg').value,
+            yesterdayCCCon: document.getElementById('yesterdayCCCon').value,
+            yesterdayCCKg: document.getElementById('yesterdayCCKg').value,
             comments: document.getElementById('comments').value,
             veoDetails: []
         };
 
+        const names = document.querySelectorAll('.name-input');
         const sizes = document.querySelectorAll('.size-input');
         const tas = document.querySelectorAll('.ta-input');
         const ccs = document.querySelectorAll('.cc-input');
         
         for (let i = 0; i < sizes.length; i++) {
             data.veoDetails.push({
+                name: names[i] ? names[i].value : `Vèo ${i+1}`, // Lưu lại tên vèo đã sửa
                 size: sizes[i].value,
                 ta: tas[i].value,
                 cc: ccs[i].value
@@ -159,19 +177,23 @@
             
             if (document.getElementById('compareTA')) {
                 document.getElementById('compareTA').value = data.compareTA || '';
-                document.getElementById('totalCCKg').value = data.totalCCKg || '';
-                document.getElementById('compareCC').value = data.compareCC || '';
+                document.getElementById('todayCCKg').value = data.todayCCKg || '';
+                document.getElementById('yesterdayCCCon').value = data.yesterdayCCCon || '';
+                document.getElementById('yesterdayCCKg').value = data.yesterdayCCKg || '';
                 document.getElementById('comments').value = data.comments || '';
             }
 
             if (data.veoDetails && data.veoDetails.length > 0) {
                 generateTable(false);
                 
+                const names = document.querySelectorAll('.name-input');
                 const sizes = document.querySelectorAll('.size-input');
                 const tas = document.querySelectorAll('.ta-input');
                 const ccs = document.querySelectorAll('.cc-input');
                 
                 for (let i = 0; i < data.veoDetails.length; i++) {
+                    // Khôi phục tên vèo đã sửa (nếu có)
+                    if(names[i]) names[i].value = data.veoDetails[i].name || `Vèo ${i+1}`; 
                     if(sizes[i]) sizes[i].value = data.veoDetails[i].size || '';
                     if(tas[i]) tas[i].value = data.veoDetails[i].ta || '';
                     if(ccs[i]) ccs[i].value = data.veoDetails[i].cc || '';
@@ -200,10 +222,10 @@
         for (let i = 1; i <= numVeo; i++) {
             tbodyHTML += `
                 <tr>
-                    <td>Vèo ${i}</td>
-                    <td><input type="number" class="cell-input size-input" placeholder="VD: 19"></td>
-                    <td><input type="number" step="0.1" class="cell-input ta-input" placeholder="0"></td>
-                    <td><input type="number" class="cell-input cc-input" placeholder="0"></td>
+                    <td><input type="text" class="cell-input name-input" data-col="0" value="Vèo ${i}"></td>
+                    <td><input type="number" class="cell-input size-input" data-col="1" placeholder="VD: 19"></td>
+                    <td><input type="number" step="0.1" class="cell-input ta-input" data-col="2" placeholder="0"></td>
+                    <td><input type="number" class="cell-input cc-input" data-col="3" placeholder="0"></td>
                 </tr>
             `;
         }
@@ -212,16 +234,52 @@
         document.getElementById('veoTable').style.display = 'table';
         document.getElementById('extraInfoArea').style.display = 'block';
         
+        setupEnterKeyNavigation(); // Gọi hàm cài đặt phím Enter
+
         if(triggerSave) saveDataLocally(); 
     }
 
-    // Hàm chung để tạo tin nhắn dựa trên loại báo cáo (sáng hoặc cuối ngày)
+    // --- TÍNH NĂNG NHẤN ENTER ĐỂ XUỐNG DÒNG ---
+    function setupEnterKeyNavigation() {
+        const table = document.getElementById('veoTable');
+        const inputs = table.querySelectorAll('.cell-input');
+
+        inputs.forEach((input) => {
+            // Lắng nghe sự kiện nhấn phím trên từng ô
+            input.addEventListener('keydown', function(event) {
+                // Kiểm tra xem phím nhấn có phải là Enter không (Mã phím 13)
+                if (event.key === 'Enter' || event.keyCode === 13) {
+                    event.preventDefault(); // Ngăn hành vi mặc định (ví dụ submit form)
+
+                    // Tìm vị trí của ô hiện tại trong danh sách tất cả các ô
+                    const currentIndex = Array.from(inputs).indexOf(this);
+                    
+                    // Nhảy sang ô ở dòng tiếp theo (cùng cột) -> Cộng thêm 4 (vì có 4 cột)
+                    const nextIndex = currentIndex + 4; 
+
+                    // Nếu ô đó tồn tại thì focus (nhảy trỏ chuột) vào đó
+                    if (nextIndex < inputs.length) {
+                        inputs[nextIndex].focus();
+                        inputs[nextIndex].select(); // Bôi đen sẵn chữ cũ (nếu có) để nhập đè nhanh
+                    }
+                }
+            });
+        });
+    }
+
+    function formatNumber(num) {
+        return num.toLocaleString('en-US');
+    }
+
     function generateMessage(type) {
         const customerName = document.getElementById('customerName').value || "...";
         const dateInput = document.getElementById('reportDate').value;
-        const compareTA = document.getElementById('compareTA').value || "...";
-        const totalCCKg = document.getElementById('totalCCKg').value || "0";
-        const compareCC = document.getElementById('compareCC').value || "...";
+        const yesterdayTAInput = document.getElementById('compareTA').value.trim();
+        
+        const todayCCKgInput = document.getElementById('todayCCKg').value.trim();
+        const yesterdayCCConInput = document.getElementById('yesterdayCCCon').value.trim();
+        const yesterdayCCKgInput = document.getElementById('yesterdayCCKg').value.trim();
+        
         const comments = document.getElementById('comments').value || "Không có nhận xét.";
 
         let formattedDate = "...";
@@ -235,11 +293,13 @@
         let detailsText = "";
         
         const numVeo = parseInt(document.getElementById('numVeo').value);
+        const names = document.querySelectorAll('.name-input');
         const sizes = document.querySelectorAll('.size-input');
         const tas = document.querySelectorAll('.ta-input');
         const ccs = document.querySelectorAll('.cc-input');
 
         for (let i = 0; i < numVeo; i++) {
+            const nameVal = names[i].value || `Vèo ${i+1}`; // Lấy tên vèo người dùng đã sửa
             const sizeVal = sizes[i].value || "0";
             const taVal = parseFloat(tas[i].value) || 0;
             const ccVal = parseInt(ccs[i].value) || 0;
@@ -248,30 +308,83 @@
             totalCC += ccVal;
 
             if (type === 'morning') {
-                // Định dạng buổi sáng: không có TA, chữ "hao", chữ "g"
-                detailsText += `+ V${i + 1}/${sizeVal}g: hao ${ccVal} c\n`;
+                // Tên vèo được sửa thành V... (VD: V10/19g) thay vì Vèo 10 để gọn
+                let shortName = nameVal.replace("Vèo ", "V");
+                detailsText += `+ ${shortName}/${sizeVal}g: hao ${ccVal} c\n`;
             } else {
-                // Định dạng cuối ngày: có TA, chữ "cc", chữ "gr"
-                detailsText += `+ Vèo ${i + 1}/${sizeVal}gr: TA: ${taVal}kg, cc: ${ccVal} c\n`;
+                detailsText += `+ ${nameVal}/${sizeVal}gr: TA: ${taVal}kg, cc: ${ccVal} c\n`;
             }
         }
 
         totalTA = Math.round(totalTA * 100) / 100;
+        
+        let compareTAText = "";
+        if (yesterdayTAInput !== "") {
+            let yesterdayTA = parseFloat(yesterdayTAInput.replace(',', '.'));
+            if (!isNaN(yesterdayTA)) {
+                let diff = totalTA - yesterdayTA;
+                diff = Math.round(Math.abs(diff) * 100) / 100; 
+                let diffString = diff.toString().replace('.', ','); 
+                if (totalTA > yesterdayTA) compareTAText = `tăng ${diffString}kg so với hôm qua`;
+                else if (totalTA < yesterdayTA) compareTAText = `giảm ${diffString}kg so với hôm qua`;
+                else compareTAText = `bằng hôm qua`;
+            } else {
+                compareTAText = yesterdayTAInput; 
+            }
+        } else {
+            compareTAText = "chưa nhập dữ liệu hôm qua";
+        }
+
+        let todayCCKg = parseFloat(todayCCKgInput.replace(',', '.')) || 0;
+        let compareCCText = "";
+        
+        if (type === 'morning') {
+            if (yesterdayCCConInput !== "") {
+                let yesterdayCon = parseInt(yesterdayCCConInput, 10);
+                let diffCon = totalCC - yesterdayCon;
+                if (diffCon > 0) compareCCText = `tăng ${formatNumber(Math.abs(diffCon))} con so với sáng hôm qua`;
+                else if (diffCon < 0) compareCCText = `giảm ${formatNumber(Math.abs(diffCon))} con so với sáng hôm qua`;
+                else compareCCText = `bằng sáng hôm qua`;
+            } else {
+                compareCCText = "chưa nhập số con sáng hôm qua";
+            }
+        } else {
+            if (yesterdayCCConInput !== "" && yesterdayCCKgInput !== "") {
+                let yesterdayCon = parseInt(yesterdayCCConInput, 10);
+                let yesterdayKg = parseFloat(yesterdayCCKgInput.replace(',', '.'));
+                
+                let diffCon = totalCC - yesterdayCon;
+                let diffKg = Math.round(Math.abs(todayCCKg - yesterdayKg) * 100) / 100;
+                
+                if (diffCon > 0) {
+                    compareCCText = `tăng ${formatNumber(Math.abs(diffCon))}c/ ${diffKg}kg so với hôm qua`;
+                } else if (diffCon < 0) {
+                    compareCCText = `giảm ${formatNumber(Math.abs(diffCon))}c/ ${diffKg}kg so với hôm qua`;
+                } else {
+                    compareCCText = `số liệu bằng hôm qua`;
+                }
+            } else {
+                compareCCText = "chưa nhập đủ số liệu cá chết hôm qua";
+            }
+        }
 
         let msg = `Báo cáo chú\n`;
         
         if (type === 'morning') {
             msg += `Tình hình cá chết hộ ${customerName} sáng nay ${formattedDate}:\n\n`;
             msg += `- Tổng: ${numVeo} vèo\n\n`;
-            msg += `- Tổng hao hụt sáng nay: ${totalCC} con, ${compareCC}\n\n`;
+            msg += `- Tổng hao hụt sáng nay: ${formatNumber(totalCC)} con, ${compareCCText}\n\n`;
             msg += `- Chi tiết:\n`;
             msg += detailsText;
             msg += `\n* Nhận xét: ${comments}`;
         } else {
             msg += `Tình hình thức ăn, cá chết VN ${customerName} ngày ${formattedDate}\n\n`;
             msg += `* Tổng: ${numVeo} vèo\n\n`;
-            msg += `* Tổng thức ăn: ${totalTA}kg, ${compareTA}.\n\n`;
-            msg += `* Tổng CC: ${totalCC} c/ ${totalCCKg}kg, ${compareCC}.\n\n`;
+            msg += `* Tổng thức ăn: ${totalTA}kg, ${compareTAText}.\n\n`; 
+            
+            let todayCCKgDisplay = todayCCKg > 0 ? todayCCKg : "...";
+            msg += `* Tổng CC: ${formatNumber(totalCC)} c/ ${todayCCKgDisplay}kg, ${compareCCText}.\n\n`;
+            
             msg += `* Chi tiết:\n\n`;
             msg += detailsText;
             msg += `\n* Nhận xét: ${comments}`;
